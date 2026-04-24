@@ -1,7 +1,9 @@
 #ifndef CONNECTION_H
 #define CONNECTION_H
 
-#include <netinet/in.h>
+
+//quick fix to avoid including <netinet/in.h> in main.c just for sockaddr_in
+struct sockaddr_in;
 
 int server_socket_create(int port, int backlog);
 void connection_handle(int client_fd, struct sockaddr_in *client_addr);
