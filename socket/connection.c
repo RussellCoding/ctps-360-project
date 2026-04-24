@@ -141,8 +141,8 @@ void connection_handle(int client_fd, struct sockaddr_in *client_addr) {
         int nread = recv_request(client_fd, read_buf, READ_BUF_SIZE);
         if (nread <= 0) break;   //end loop if disconnects
 
-        ParsedRequest req;
-        ParseResult   result = http_parse_request(read_buf, nread, &req);
+        HttpRequest req;
+        ParseResult result = http_parse_request(read_buf, (size_t)nread, &req);
 
         int response_len;
 
@@ -163,8 +163,11 @@ void connection_handle(int client_fd, struct sockaddr_in *client_addr) {
             if (send_all(client_fd, write_buf, response_len) < 0) break;
         }
 
+        /* req may own heap memory (body) */
+        http_request_free(&req);
+
         //eend connection
-        if (result != PARSE_OK || !req.keep_alive) break;
+        if (!req.keep_alive) break;
     }
 
     fprintf(stderr, "[conn] closing %s\n", peer_ip);

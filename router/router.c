@@ -7,7 +7,7 @@
  * Route table
  * --------------------------------------------------------------------- */
 
-typedef void (*HandlerFn)(const ParsedRequest *, char *, int);
+typedef void (*HandlerFn)(const HttpRequest *, char *, int);
 
 //this rep a single route mapping
 typedef struct {
@@ -37,7 +37,7 @@ static const Route route_table[] = {
     2. path matches but method doesnt: return 405
     3. no match: return 404 not found
 */
-void router_dispatch(const ParsedRequest *req, char *out, int out_size) {
+void router_dispatch(const HttpRequest *req, char *out, int out_size) {
     if (!req || !out || out_size <= 0) return;
 
     int path_matched = 0;
