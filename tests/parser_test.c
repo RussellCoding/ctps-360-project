@@ -123,6 +123,175 @@ void test_function_http_parse_error_status(void){
     TEST_ASSERT_EQUAL_STRING("400 Bad Request", status);
 }
 
+//int url_decode(char *dst, size_t dst_size, const char *src, size_t src_len);
+void test_function_url_decode(void){
+    char dst[256];
+    
+    // Test simple string
+    int result = url_decode(dst, sizeof(dst), "hello", 5);
+    TEST_ASSERT_EQUAL_INT(0, result);
+    TEST_ASSERT_EQUAL_STRING("hello", dst);
+    
+    // Test percent encoding
+    result = url_decode(dst, sizeof(dst), "hello%20world", 13);
+    TEST_ASSERT_EQUAL_INT(0, result);
+    TEST_ASSERT_EQUAL_STRING("hello world", dst);
+    
+    // Test plus as space
+    result = url_decode(dst, sizeof(dst), "hello+world", 11);
+    TEST_ASSERT_EQUAL_INT(0, result);
+    TEST_ASSERT_EQUAL_STRING("hello world", dst);
+    
+    // Test hex uppercase
+    result = url_decode(dst, sizeof(dst), "test%2F%3A", 10);
+    TEST_ASSERT_EQUAL_INT(0, result);
+    TEST_ASSERT_EQUAL_STRING("test/:", dst);
+    
+    // Test hex lowercase
+    result = url_decode(dst, sizeof(dst), "test%2f%3a", 10);
+    TEST_ASSERT_EQUAL_INT(0, result);
+    TEST_ASSERT_EQUAL_STRING("test/:", dst);
+    
+    // Test mixed encoding
+    result = url_decode(dst, sizeof(dst), "hello%20world%2BTest+123", 25);
+    TEST_ASSERT_EQUAL_INT(0, result);
+    TEST_ASSERT_EQUAL_STRING("hello world+Test 123", dst);
+    
+    // Test truncated escape
+    result = url_decode(dst, sizeof(dst), "hello%2", 7);
+    TEST_ASSERT_EQUAL_INT(-1, result);
+    
+    // Test invalid hex
+    result = url_decode(dst, sizeof(dst), "hello%ZZ", 8);
+    TEST_ASSERT_EQUAL_INT(-1, result);
+    
+    // Test buffer too small
+    result = url_decode(dst, 5, "hello world", 11);
+    TEST_ASSERT_EQUAL_INT(-1, result);
+    
+    // Test empty string
+    result = url_decode(dst, sizeof(dst), "", 0);
+    TEST_ASSERT_EQUAL_INT(0, result);
+    TEST_ASSERT_EQUAL_STRING("", dst);
+}
+
+//int path_normalize(char *path);
+void test_function_path_normalize(void){
+    char path[MAX_PATH];
+    int result;
+    
+    // Test simple path
+    strcpy(path, "/hello/world");
+    result = path_normalize(path);
+    TEST_ASSERT_EQUAL_INT(0, result);
+    TEST_ASSERT_EQUAL_STRING("/hello/world", path);
+    
+    // Test dot segment
+    strcpy(path, "/hello/./world");
+    result = path_normalize(path);
+    TEST_ASSERT_EQUAL_INT(0, result);
+    TEST_ASSERT_EQUAL_STRING("/hello/world", path);
+    
+    // Test double-dot
+    strcpy(path, "/hello/world/../test");
+    result = path_normalize(path);
+    TEST_ASSERT_EQUAL_INT(0, result);
+    TEST_ASSERT_EQUAL_STRING("/hello/test", path);
+    
+    // Test multiple dots
+    strcpy(path, "/a/b/c/../../d");
+    result = path_normalize(path);
+    TEST_ASSERT_EQUAL_INT(0, result);
+    TEST_ASSERT_EQUAL_STRING("/a/d", path);
+    
+    // Test root
+    strcpy(path, "/");
+    result = path_normalize(path);
+    TEST_ASSERT_EQUAL_INT(0, result);
+    TEST_ASSERT_EQUAL_STRING("/", path);
+    
+    // Test escape attempt
+    strcpy(path, "/../etc/passwd");
+    result = path_normalize(path);
+    TEST_ASSERT_EQUAL_INT(-1, result);
+    
+    // Test escape attempt deep
+    strcpy(path, "/a/b/../../../../etc/passwd");
+    result = path_normalize(path);
+    TEST_ASSERT_EQUAL_INT(-1, result);
+    
+    // Test consecutive slashes
+    strcpy(path, "/hello//world");
+    result = path_normalize(path);
+    TEST_ASSERT_EQUAL_INT(0, result);
+    TEST_ASSERT_EQUAL_STRING("/hello/world", path);
+    
+    // Test not absolute
+    strcpy(path, "hello/world");
+    result = path_normalize(path);
+    TEST_ASSERT_EQUAL_INT(-1, result);
+    
+    // Test NULL
+    result = path_normalize(NULL);
+    TEST_ASSERT_EQUAL_INT(-1, result);
+}
+
+// int parse_query_string(const char *qs, size_t len, QueryParam *params, int max_params);
+void test_function_parse_query_string(void){
+    QueryParam params[MAX_QUERY_PARAMS];
+    int result;
+    
+    // Test single param
+    result = parse_query_string("key=value", 9, params, MAX_QUERY_PARAMS);
+    TEST_ASSERT_EQUAL_INT(1, result);
+    TEST_ASSERT_EQUAL_STRING("key", params[0].key);
+    TEST_ASSERT_EQUAL_STRING("value", params[0].value);
+    
+    // Test multiple params
+    result = parse_query_string("key1=value1&key2=value2&key3=value3", 36, params, MAX_QUERY_PARAMS);
+    TEST_ASSERT_EQUAL_INT(3, result);
+    TEST_ASSERT_EQUAL_STRING("key1", params[0].key);
+    TEST_ASSERT_EQUAL_STRING("value1", params[0].value);
+    TEST_ASSERT_EQUAL_STRING("key2", params[1].key);
+    TEST_ASSERT_EQUAL_STRING("value2", params[1].value);
+    TEST_ASSERT_EQUAL_STRING("key3", params[2].key);
+    TEST_ASSERT_EQUAL_STRING("value3", params[2].value);
+    
+    // Test empty value
+    result = parse_query_string("key=", 4, params, MAX_QUERY_PARAMS);
+    TEST_ASSERT_EQUAL_INT(1, result);
+    TEST_ASSERT_EQUAL_STRING("key", params[0].key);
+    TEST_ASSERT_EQUAL_STRING("", params[0].value);
+    
+    // Test URL encoded values
+    result = parse_query_string("search=hello%20world&filter=test%2Bvalue", 40, params, MAX_QUERY_PARAMS);
+    TEST_ASSERT_EQUAL_INT(2, result);
+    TEST_ASSERT_EQUAL_STRING("search", params[0].key);
+    TEST_ASSERT_EQUAL_STRING("hello world", params[0].value);
+    TEST_ASSERT_EQUAL_STRING("filter", params[1].key);
+    TEST_ASSERT_EQUAL_STRING("test+value", params[1].value);
+    
+    // Test plus as space
+    result = parse_query_string("name=John+Doe&city=New+York", 28, params, MAX_QUERY_PARAMS);
+    TEST_ASSERT_EQUAL_INT(2, result);
+    TEST_ASSERT_EQUAL_STRING("John Doe", params[0].value);
+    TEST_ASSERT_EQUAL_STRING("New York", params[1].value);
+    
+    // Test no equals
+    result = parse_query_string("key_without_value", 17, params, MAX_QUERY_PARAMS);
+    TEST_ASSERT_EQUAL_INT(1, result);
+    TEST_ASSERT_EQUAL_STRING("key_without_value", params[0].key);
+    TEST_ASSERT_EQUAL_STRING("", params[0].value);
+    
+    // Test empty string
+    result = parse_query_string("", 0, params, MAX_QUERY_PARAMS);
+    TEST_ASSERT_EQUAL_INT(0, result);
+    
+    // Test max params exceeded
+    result = parse_query_string("a=1&b=2&c=3", 12, params, 2);
+    TEST_ASSERT_EQUAL_INT(2, result);
+}
+
 void setUp(void) {
     // No set up needed
 }
@@ -137,5 +306,8 @@ int main(){
     RUN_TEST(test_function_http_request_free);
     RUN_TEST(test_function_http_get_header);
     RUN_TEST(test_function_http_parse_error_status);
+    RUN_TEST(test_function_url_decode);
+    RUN_TEST(test_function_path_normalize);
+    RUN_TEST(test_function_parse_query_string);
     return UNITY_END();
 }
