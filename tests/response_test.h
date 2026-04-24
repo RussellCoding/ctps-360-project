@@ -2,7 +2,7 @@
 #define RESPONSE_TEST_H
 #include <stdlib.h>
 #include <string.h>
-#include "./unity.h"
+#include "./unity/unity.h"
 #include "../response/response_builder.h"
 #include "../response/response.h"
 
