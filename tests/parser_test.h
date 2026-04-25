@@ -1,3 +1,5 @@
+#ifndef PARSER_TEST_H
+#define PARSER_TEST_H
 #include "./unity/unity.h"
 #include "../parser/http_parser.h"
 #include "../parser/url.h"
@@ -24,3 +26,5 @@ void test_function_path_normalize(void);
 
 // int parse_query_string(const char *qs, size_t len, QueryParam *params, int max_params);
 void test_function_parse_query_string(void);
+
+#endif /* PARSER_TEST_H */

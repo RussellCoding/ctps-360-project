@@ -3,21 +3,35 @@
 #include "../parser/url.h"
 #include <stdio.h>
 #include <string.h>
+#include <stdlib.h>
 
 
 /*
     static html welcome page to the root
 */
 void handle_index(const HttpRequest *req, char *out, int out_size) {
-    //just for compiler warnings
     (void)req;
+    HttpResponse resp;
+    resp_init(&resp, 200);
+    
     const char *body =
         "<!DOCTYPE html>\n"
         "<html><head><title>Hello</title></head>\n"
         "<body><h1>Welcome to MyHTTPServer</h1>"
         "<p>The server is running.</p></body></html>\n";
-    response_build_str(200, "text/html; charset=utf-8",
-                       body, req->keep_alive, out, out_size);
+    
+    resp_set_body_str(&resp, body, "text/html; charset=utf-8");
+    
+    char *serialized;
+    size_t serialized_len;
+    resp_serialize(&resp, &serialized, &serialized_len);
+    
+    if (serialized_len < (size_t)out_size) {
+        memcpy(out, serialized, serialized_len);
+    }
+    
+    free(serialized);
+    resp_free(&resp);
 }
 
 
@@ -39,7 +53,21 @@ void handle_echo(const HttpRequest *req, char *out, int out_size) {
     } else {
         snprintf(body, sizeof(body), "(no query string)\n");
     }
-    response_build_str(200, "text/plain", body, req->keep_alive, out, out_size);
+    
+    HttpResponse resp;
+    resp_init(&resp, 200);
+    resp_set_body_str(&resp, body, "text/plain");
+    
+    char *serialized;
+    size_t serialized_len;
+    resp_serialize(&resp, &serialized, &serialized_len);
+    
+    if (serialized_len < (size_t)out_size) {
+        memcpy(out, serialized, serialized_len);
+    }
+    
+    free(serialized);
+    resp_free(&resp);
 }
 
 
@@ -60,7 +88,21 @@ void handle_headers(const HttpRequest *req, char *out, int out_size) {
                         req->headers[i].name,
                         req->headers[i].value);
     }
-    response_build_str(200, "text/plain", body, req->keep_alive, out, out_size);
+    
+    HttpResponse resp;
+    resp_init(&resp, 200);
+    resp_set_body_str(&resp, body, "text/plain");
+    
+    char *serialized;
+    size_t serialized_len;
+    resp_serialize(&resp, &serialized, &serialized_len);
+    
+    if (serialized_len < (size_t)out_size) {
+        memcpy(out, serialized, serialized_len);
+    }
+    
+    free(serialized);
+    resp_free(&resp);
 }
 
 
@@ -68,7 +110,20 @@ void handle_headers(const HttpRequest *req, char *out, int out_size) {
     provides json status to verify
 */
 void handle_health(const HttpRequest *req, char *out, int out_size) {
-    response_build_json("{\"status\":\"ok\"}", req->keep_alive, out, out_size);
+    (void)req;
+    HttpResponse resp;
+    resp_make_json(&resp, 200, "{\"status\":\"ok\"}");
+    
+    char *serialized;
+    size_t serialized_len;
+    resp_serialize(&resp, &serialized, &serialized_len);
+    
+    if (serialized_len < (size_t)out_size) {
+        memcpy(out, serialized, serialized_len);
+    }
+    
+    free(serialized);
+    resp_free(&resp);
 }
 
 
@@ -77,13 +132,25 @@ void handle_health(const HttpRequest *req, char *out, int out_size) {
     as it was received
 */
 void handle_post_echo(const HttpRequest *req, char *out, int out_size) {
+    HttpResponse resp;
+    resp_init(&resp, 200);
+    
     if (req->body && req->body_length > 0) {
-        response_build_str(200, "text/plain",
-                           req->body, req->keep_alive, out, out_size);
+        resp_set_body_bytes(&resp, req->body, req->body_length, "text/plain");
     } else {
-        response_build_str(200, "text/plain",
-                           "(empty body)\n", req->keep_alive, out, out_size);
+        resp_set_body_str(&resp, "(empty body)\n", "text/plain");
     }
+    
+    char *serialized;
+    size_t serialized_len;
+    resp_serialize(&resp, &serialized, &serialized_len);
+    
+    if (serialized_len < (size_t)out_size) {
+        memcpy(out, serialized, serialized_len);
+    }
+    
+    free(serialized);
+    resp_free(&resp);
 }
 
 
@@ -92,14 +159,40 @@ void handle_post_echo(const HttpRequest *req, char *out, int out_size) {
     when reuqested uri doesnt match any registered route
  */
 void handle_not_found(const HttpRequest *req, char *out, int out_size) {
-    response_build_error(404, req ? req->keep_alive : 0, out, out_size);
+    (void)req;
+    HttpResponse resp;
+    resp_make_error(&resp, 404, "Not Found");
+    
+    char *serialized;
+    size_t serialized_len;
+    resp_serialize(&resp, &serialized, &serialized_len);
+    
+    if (serialized_len < (size_t)out_size) {
+        memcpy(out, serialized, serialized_len);
+    }
+    
+    free(serialized);
+    resp_free(&resp);
 }
 
 /* 405 method not allowed
     when route exists but http method is incorrect 
  */
 void handle_method_not_allowed(const HttpRequest *req, char *out, int out_size) {
-    response_build_error(405, req ? req->keep_alive : 0, out, out_size);
+    (void)req;
+    HttpResponse resp;
+    resp_make_error(&resp, 405, "Method Not Allowed");
+    
+    char *serialized;
+    size_t serialized_len;
+    resp_serialize(&resp, &serialized, &serialized_len);
+    
+    if (serialized_len < (size_t)out_size) {
+        memcpy(out, serialized, serialized_len);
+    }
+    
+    free(serialized);
+    resp_free(&resp);
 }
 
 /* 400 bad request
@@ -107,7 +200,19 @@ void handle_method_not_allowed(const HttpRequest *req, char *out, int out_size) 
  */
 void handle_bad_request(const HttpRequest *req, char *out, int out_size) {
     (void)req;
-    response_build_error(400, 0, out, out_size);
+    HttpResponse resp;
+    resp_make_error(&resp, 400, "Bad Request");
+    
+    char *serialized;
+    size_t serialized_len;
+    resp_serialize(&resp, &serialized, &serialized_len);
+    
+    if (serialized_len < (size_t)out_size) {
+        memcpy(out, serialized, serialized_len);
+    }
+    
+    free(serialized);
+    resp_free(&resp);
 }
 
 /* 500 internal server error
@@ -115,5 +220,17 @@ void handle_bad_request(const HttpRequest *req, char *out, int out_size) {
  */
 void handle_internal_error(const HttpRequest *req, char *out, int out_size) {
     (void)req;
-    response_build_error(500, 0, out, out_size);
+    HttpResponse resp;
+    resp_make_error(&resp, 500, "Internal Server Error");
+    
+    char *serialized;
+    size_t serialized_len;
+    resp_serialize(&resp, &serialized, &serialized_len);
+    
+    if (serialized_len < (size_t)out_size) {
+        memcpy(out, serialized, serialized_len);
+    }
+    
+    free(serialized);
+    resp_free(&resp);
 }
