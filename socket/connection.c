@@ -14,7 +14,7 @@
 #include <arpa/inet.h>
 
 #define READ_BUF_SIZE   (8192)
-#define WRITE_BUF_SIZE  (RESPONSE_TOTAL_MAX)
+#define WRITE_BUF_SIZE  (READ_BUF_SIZE)
 
 /*
 this creates, binds, and listens to the tcp socket

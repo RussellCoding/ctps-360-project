@@ -1,1 +1,0 @@
-/usr/bin/cc CMakeFiles/webserver.dir/main.c.o CMakeFiles/webserver.dir/socket/connection.c.o -o webserver 
