@@ -14,7 +14,8 @@
 #include <arpa/inet.h>
 
 #define READ_BUF_SIZE   (8192)
-#define WRITE_BUF_SIZE  (RESPONSE_TOTAL_MAX)
+//#define WRITE_BUF_SIZE  (RESPONSE_TOTAL_MAX) this is not defined
+#define WRITE_BUF_SIZE  (READ_BUF_SIZE)
 
 /*
 this creates, binds, and listens to the tcp socket
@@ -154,8 +155,11 @@ void connection_handle(int client_fd, struct sockaddr_in *client_addr) {
         } else {
             //400 bad request
             fprintf(stderr, "[req]  parse error: %s\n",
-                    http_parse_result_str(result));
-            response_len = response_build_error(400, 0, write_buf, WRITE_BUF_SIZE);
+                    http_parse_error_status(result));
+            //response_len = response_build_error(400, 0, write_buf, WRITE_BUF_SIZE); this was giving an error
+            const char *res_str = http_parse_error_status(PARSE_ERR_BAD_REQUEST);
+            response_len = strlen(res_str);
+            strncpy(write_buf, res_str, WRITE_BUF_SIZE);
         }
 
         //send response back to client
