@@ -1,1 +1,9 @@
+
+# Cmake 
+
 build/
+CMakeFiles/
+CMakeCache.txt
+*.o
+*.exe
+*.out
