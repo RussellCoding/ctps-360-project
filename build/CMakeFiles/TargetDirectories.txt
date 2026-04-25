@@ -1,3 +1,0 @@
-/mnt/c/Users/coolk/Projects/Cpts360Project/CPTS360Project/build/CMakeFiles/webserver.dir
-/mnt/c/Users/coolk/Projects/Cpts360Project/CPTS360Project/build/CMakeFiles/edit_cache.dir
-/mnt/c/Users/coolk/Projects/Cpts360Project/CPTS360Project/build/CMakeFiles/rebuild_cache.dir
