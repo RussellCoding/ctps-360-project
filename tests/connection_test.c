@@ -1,9 +1,4 @@
 #include "./connection_test.h"
-#include <errno.h>
-#include <stdlib.h>
-#include <arpa/inet.h>
-#include <string.h>
-#include <unistd.h>
 
 void test_function_server_socket_create(void){
     // Create a valid server socket with dynamic port

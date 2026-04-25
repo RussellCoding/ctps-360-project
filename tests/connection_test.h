@@ -3,6 +3,12 @@
 #include <string.h>
 #include "../socket/connection.h"
 #include "unity/unity.h"
+#include <errno.h>
+#include <stdlib.h>
+#include <arpa/inet.h>
+#include <string.h>
+#include <unistd.h>
+
 
 
 /* socket/connection.h */
