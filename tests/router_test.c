@@ -3,16 +3,11 @@
 
 void test_function_router_dispatch(void){
     HttpRequest req;
-    char in[256];
+    char in[256], expected[256]="\0";
     http_parse_request(raw_get, strlen(raw_get), &req);
     router_dispatch(&req, in, 256);
-    TEST_ASSERT_EQUAL_STRING("HTTP/1.1 200 OK\r\n"
-        "Content-Length: 138\r\n"
-        "Content-Type: text/html; charset=utf-8\r\n"
-        "\r\n"
-        "<!DOCTYPE html>\n"
-        "<html><head><title>Hello</title></head>\n"
-        "<body><h1>Welcome to MyHTTPServer</h1><p>The server is running.</p></body></html>\n", in);
+    handle_index(NULL, expected, 256);
+    TEST_ASSERT_EQUAL_STRING(expected, in);
 
     http_parse_request(raw_get_full_headers, strlen(raw_get_full_headers), &req);
     strcpy(req.path, "/headers");
